@@ -15,6 +15,9 @@ db = DBI::dbConnect(RSQLite::SQLite(),"statcast_db.sqlite")
 #read in data from database
 dat = DBI::dbGetQuery(db,"SELECT * FROM statcast_data_2020")
 DBI::dbDisconnect(db)
+
+#Alternatively, read in csv file
+dat = readr::read_csv("statcast_data_2020.csv")
   
 #read in csv file of spin direction data  
 SD = readr::read_csv("spin_direction_pbp.csv")
