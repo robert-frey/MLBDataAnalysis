@@ -17,6 +17,7 @@ dat = DBI::dbGetQuery(db,"SELECT * FROM statcast_data_2020")
 DBI::dbDisconnect(db)
 
 #Alternatively, read in csv file
+#google link for file: https://drive.google.com/file/d/16hmt1H6LDL_yUVckWHoHMgSMvT8omHkt/view?usp=sharing
 dat = readr::read_csv("statcast_data_2020.csv")
   
 #read in csv file of spin direction data  
