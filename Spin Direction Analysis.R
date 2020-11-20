@@ -185,33 +185,46 @@ spin_direction_quadrant(dat,handedness = "RHP",pitch="Changeup")
 
 
 
-#random sample of a pitcher's pitches
-player_spin_direction <- function(data,player,pitch,break_toward="LHB") {
+#pitcher's spin direction quadrant data
+player_spin_direction <- function(data,player,pitch) {
   
-  swings <- c("foul","hit_into_play","hit_into_play_score","hit_into_play_no_out",
+  swing <- c("foul","hit_into_play","hit_into_play_score","hit_into_play_no_out",
               "foul_tip","swinging_strike","swinging_strike_blocked")
   
-  whiffs <- c("swinging_strike","swinging_strike_blocked")
+  whiff <- c("swinging_strike","swinging_strike_blocked")
   
   results <- data %>% dplyr::filter(pitcher_name == player,pitch_name == pitch) %>%
-    dplyr::select(pitcher_name,events,description,release_speed,release_spin_direction,pfx_x,pfx_z,release_spin_rate,release_pos_x,release_pos_z,quadrant) %>%
-    dplyr::mutate(tilt = spin_dir_to_tilt(release_spin_direction,break_type=break_toward),
-                  #swing = ifelse(swings %in% description,"Y","N"),
-                  #whiff = ifelse(whiffs %in% description,"Y","N"),
-                  #called_strike = ifelse(description == "called_strike","Y","N")
-                  ) #%>%
-    #dplyr::sample_n(25)
-  
+    dplyr::select(pitcher_name,events,description,release_speed,release_spin_direction,pfx_x,pfx_z,release_spin_rate,release_pos_x,release_pos_z,quadrant,
+                  estimated_woba_using_speedangle) %>%
+    dplyr::mutate(estimated_woba_using_speedangle = as.numeric(estimated_woba_using_speedangle),
+                  swings = ifelse(description %in% swing,1,0),
+                  whiffs = ifelse(description %in% whiff,1,0),
+                  called_strike = ifelse(description == "called_strike",1,0)) %>%
+    dplyr::group_by(quadrant) %>% dplyr::summarise(pitches = n(),
+                                                   mean_sd = mean(release_spin_direction,na.rm=T),
+                                                   mean_x_mov = mean(pfx_x,na.rm = T),
+                                                   mean_z_mov = mean(pfx_z,na.rm = T),
+                                                   mean_spin_rate = mean(release_spin_rate,na.rm=T),
+                                                   mean_release_point_height = mean(release_pos_z,na.rm=T),
+                                                   mean_release_point_side = mean(release_pos_x,na.rm = T),
+                                                   xwOBAcon = mean(estimated_woba_using_speedangle,na.rm = T),
+                                                   swings = sum(swings),
+                                                   whiffs = sum(whiffs),
+                                                   called_strikes = sum(called_strike)) %>%
+    filter(is.na(quadrant)==FALSE) %>%
+    mutate(pct = round(whiffs/swings,3),
+           pct = pct*100,
+           csw = round((whiffs+called_strikes)/pitches,3),
+           csw = csw*100) %>% 
+    arrange(-pct)
+
   return(results)
 }
 
 #Devin Williams
-DW = player_spin_direction(dat,"Devin Williams","Changeup","RHB")
+player_spin_direction(dat,"Devin Williams","Changeup")
 
 
-DW = DW %>% group_by(quadrant) %>% dplyr::summarise(pitches = n(),
-                                                    avg_sd = mean(release_spin_direction,na.rm=T),
-                                                    avg_spin_rate = mean(release_spin_rate,na.rm=T))
 
 #team spin direction data
 team_spin_direction <- function(data,team_code="All",handedness,pitch) {
